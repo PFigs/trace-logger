@@ -1,0 +1,27 @@
+# JLINK is provided by Segger 
+# usage of this tools requires 
+# agreement with its licence
+
+FROM resin/rpi-raspbian:latest
+
+RUN [ "cross-build-start" ]
+
+RUN groupadd -r builder --gid 1000 && useradd --uid 1000 -r -g builder builder
+
+RUN apt-get update && apt-get install -y telnet moreutils
+
+WORKDIR /jlink/
+COPY *.tgz* /jlink/
+RUN tar -hxzvf JLink_Linux_V620i_arm.tgz --strip 1
+RUN cp /jlink/99-jlink.rules /etc/udev/rules.d/
+
+WORKDIR /builder/
+COPY *.jlink /builder/
+COPY ./ts_print.sh /builder/ts_print.sh
+COPY ./find_devices.sh /builder/find_devices.sh
+
+ENV PATH="/jlink/:$PATH"
+
+RUN [ "cross-build-end" ]
+
+

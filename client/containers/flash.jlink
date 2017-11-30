@@ -1,0 +1,5 @@
+erase
+loadfile target.hex
+r
+g
+q

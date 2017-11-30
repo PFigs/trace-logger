@@ -1,0 +1,82 @@
+version: '2'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.0.0
+    container_name: elasticsearch
+    environment:
+      - cluster.name=docker-node
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+    expose:
+      - 9200
+
+    ports:
+      - 9200:9200
+
+    networks:
+      - esnet
+
+    logging:
+      driver: journald
+
+    restart: always
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana-oss:6.0.0
+
+    volumes:
+      - ./es:/usr/share/elasticsearch/data
+
+    links:
+      - "elasticsearch"
+
+    expose:
+      - 56001
+
+    ports:
+      - "5601:5601"
+
+    networks:
+      - esnet
+
+    logging:
+      driver: journald
+
+    restart: always
+
+
+  fluentd:
+    build: .
+    volumes:
+      - ./conf:/fluentd/etc
+      - ./logs:/fluentd/logs/
+    restart: always
+
+    links:
+      - "elasticsearch"
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+
+    networks:
+      - esnet
+
+    logging:
+      driver: journald
+
+    restart: always
+
+volumes:
+  esdata:
+    driver: local
+
+networks:
+  esnet:

@@ -1,0 +1,37 @@
+# JLINK is provided by Segger 
+# usage of this tools requires 
+# agreement with its licence
+
+FROM debian
+
+RUN groupadd -r builder --gid 1000 && useradd --uid 1000 -r -g builder builder
+
+# Update the sources list
+RUN apt-get update && apt-get install -y telnet moreutils wget nano default-jre ntp p7zip-full build-essential git srecord python-dev \
+               python-matplotlib doxygen graphviz mscgen libtool automake autoconf \
+               libusb-1.0-0-dev pkg-config libtomcrypt-dev \
+               cppcheck lib32z1 lib32ncurses5 clang-format-3.8
+
+RUN wget https://bootstrap.pypa.io/get-pip.py \
+    && python get-pip.py \
+    && pip install pycryptodome pyserial crc16
+
+RUN wget https://launchpad.net/gcc-arm-embedded/4.8/4.8-2014-q3-update/+download/gcc-arm-none-eabi-4_8-2014q3-20140805-linux.tar.bz2 \
+    && tar xjf gcc-arm-none-eabi-4_8-2014q3-20140805-linux.tar.bz2 \
+    && mv gcc-arm-none-eabi-4_8-2014q3 /opt
+
+# Install jlink and nordic tools
+WORKDIR /jlink/
+COPY JLink*.deb /jlink/
+RUN dpkg -i *.deb
+
+WORKDIR /nordic/
+COPY nRF5x-Command-Line-Tools*nux*.tar /nordic/
+RUN tar -xvf *.tar
+
+WORKDIR /builder/
+COPY *.jlink /builder/
+COPY ./ts_print.sh /builder/ts_print.sh
+
+USER builder
+ENV PATH="/opt/gcc-arm-none-eabi-4_8-2014q3/bin:/nordic/nrfjprog/:$PATH"
